@@ -1,0 +1,73 @@
+在puppet系统中资源是最基础构建块（the fundamental building blocks）被用在模块系统状态。通过系统上的puppet，资源用不同的元素描述最后渴望的状态。每件事情在puppet管理上被解释为资源。同样的，在puppet和底层系统之间的交互也是解释为一种资源。
+资源描述系统组件的渴望状态是被特殊声明一个type，title和一个attributes表
+type 是资源的类型，决定系统组建puppet管理，一些普遍type如user，group，file。一种资源声明总是包含资源类型（type）作为开始管理。
+title 是资源的标题，身份和资源类型的实例。type的组合和title参考到一个单元不同的元素，如果一个用户名joe，一个文件路径/root/。bashrc
+attributes 是 每个资源支持的一对键值表。那些属性提供一个详细的描述，puppet使用管理资源。如 路径/root/。bashrc要出现，用户dan要出现和有login shell 设置
+
+puppet提供一个 Domain Specific Language （DSL）在系统配置中
+<type> { <title> :
+    attribute1 => value1,
+    attribute2 => value2,
+}
+你可以结婚多个资源一起创建一个manifest，用puppet Dsl ,manifests包含class，他使用创建资源的集合提供一个普通的应用或服务
+class webserver {
+ package { 'apache2':
+ ensure => latest,
+ }
+ service { 'apache2':
+ ensure => running,
+ subscribe => Package['apache2'],
+ }
+}
+
+资源特性
+type和provider 都有提供api 实现puppet定义DSL
+• Declarative
+• Idempotent
+• Unique
+
+declarative
+用puppet管理系统你只要有一个描述出你渴望的每个资源状态
+如
+user { 'ftp':
+ ensure => present,
+ shell => '/sbin/nologin',
+}
+
+当这个ftp用户出现在系统中，puppet就确保有这个用户，他会判断存在在系统上，有没有shel设置。
+
+idempotent
+应用到操作结果并在多次数应用下，puppet会简单吧资源应用到多个系统类型上，多次运行，但是都是同样的效果。并且可以反复利用如ftp用户absent就是删除。
+
+唯一
+puppet的资源必须要被唯一，同样的资源要用不同的type和title组成
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

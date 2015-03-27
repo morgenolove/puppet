@@ -1,0 +1,20 @@
+在系统上，provider 实施这个行为同在管理资源。type表示这接口用于描述资源，provider实施如何与底层系统资源交互。接口后实施之间是否清楚分开，总是多种providers 被指定每个type。原生的type package，有分离providers 可以与package没有限制交互，穿梭在大量的linux系统，如apt，yum，rpm和zypper
+在上个的章节，我们创建了一个类型叫 custom_package ，和属性类别描述资源一起。这type可以被用在表达puppet管理包，如：
+custom_package { "httpd":
+ensure => present,
+version => "1.2.3-5"
+}
+
+如何创建一个定制provider 并相关联一个type？
+如何决定大多恰当的provider
+provider管理资源状态
+provider请求接口列表
+provider 优化
+
+创建一个provider
+因为puppet type的接口返回要关联provider，provider管理type资源的描述状态。type方法能调用 Puppet::Type 到本地接口或者定制type，puppe就知道了
+如何返回一个type和关联一个provider用irb
+irb(main):002:0> require 'puppet'
+=> true
+irb(main):003:0> Puppet::Type.type(:package)
+=> Puppet::Type::Package

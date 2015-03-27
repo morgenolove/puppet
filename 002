@@ -1,0 +1,177 @@
+type api 提供开发人员简单创建用ruby方法，通过接口服务在一个抽象层中，提供多个provider可以被实现，允许系统管理员描述系统配置资源。
+创建一个定制type
+加arrtibutes给一个type
+特殊attributes
+-Namevars
+-Properties
+-ensure property
+-Parametes
+-Input validation and data transformation
+-Implicit resource dependencis
+
+定义puppet types
+资源类型被定义靠用调用newtype 方法在Puppet::Type类和通过一个符号关系创建一个名词
+创建一个定制user的资源，newtype方法
+Puppet::Type.newtype(:custom_user)do
+end
+在ruby，文件名必须匹配ruby类的namespace，上面文件保存在puppet/type/custom_user.rb文件
+目录结构可以参考下面
+`-- /etc/puppet/modules/example
+ |-- lib
+ | `-- puppet
+ | |-- type
+ | | `-- custom_user.rb
+ | `-- provider
+ | `-- ….
+
+newparam
+Puppet::Type.newtype(:custom_package) do
+ ...
+ newparam(:name, :namevar => true) do
+ end
+end
+puppet原代码中许多参数被指定是一个namevar 通过isnamevar方法
+newparam(:name) do
+ isnamevar
+end
+推荐用namevar => true
+
+Properties
+是属性，资源状态模型在底层系统，puppet主动实施他们的值在系统上，每次运行，都会重新完成当前的值并且比较值在资源中的描述。
+也是主要整合type和provider点重要点。类型指定的属性存在，与provider供应的实施细节，如何就那些特性在系统上管理。
+搞清楚如果一个属性属性应该是一个属性是一个最重要的设计对于资源型的决定。一般，你可以描述一个资源应该是一个特性有哪些问题？
+• Can I discover the state of this attribute?
+• Can I update the state of this attribute?
+如果有一个是no的回答，就最好不要做一个property。（property是提供一个可以查询状态，更新状态的属性）
+Puppet::Type.newtype(:custom_package) do
+ ...
+ newproperty(:version) do
+ end
+end
+使用上
+custom_package { 'apache':
+ version => '2.2.22-1ubuntu1',
+}
+
+The ensure Property
+ensure property也是一个存在的资源模型，大多资源types支持ensurable这个property。一些直接的原始的类型是没有ensurable，如exec，notify。
+你可以添加ensure property在一个type中
+Puppet::Type.newtype(:custom_package) do
+ ensurable
+ ...
+end
+这个方法添加了ensure property到我们的资源类型，使用接受值，provider管理ensure property的实现，创建，存在还是销毁
+
+Parameters
+参数，提供额外的信息给providers，是个那个property管理，property，parameter都是不具有执行能力的。
+参数是运行你特定的额外的context或者有能力覆盖一个provider的默认行为。比如服务资源提供的参数start，stop，status和restart，那些属性刷新服务状态。
+Puppet::Type.newtype(:custom_package) do
+ ...
+ newparam(:source) do
+ end
+end
+
+custom_package { 'apache':
+ ensure => present,
+ source => 'http://package_repo/apache.rpm',
+}
+
+默认值
+defaultto
+
+Puppet::Type.newtype(:custom_package) do
+ newparam(:replace_config) do
+ defaultto :no
+ end
+end
+
+Input Validation
+提供了type api provides 错误信息。validate 和newvalues
+require ‘pathname’
+require ‘uri'
+Puppet::Type.newtype(:custom_package) do
+ newparam(:source) do
+ validate do |value|
+ unless Pathname.new(value).absolute? ||
+ URI.parse(value).is_a?(URI::HTTP)
+ fail("Invalid source #{value}")
+ end
+ end
+ end
+end
+
+
+Puppet::Type.newtype(:custom_package) do
+ ...
+ newproperty(:version) do
+ validate do |value|
+ fail("Invalid version #{value}") unless value =~ /^[0-9A-Za-z\.-]+$/
+ end
+ end
+end
+
+
+Puppet::Type.newtype(:custom_package) do
+ newparam(:replace_config) do
+ defaultto :no
+ newvalues(:yes, :no)
+ end
+end
+
+
+Puppet::Type.newtype(:custom_package) do
+ ...
+ newparam(:source) do
+ newvalues(/https?:\/\//, /\//)
+ end
+end
+
+
+munge
+决定如果一个property 需要被更新，puppet平台一个简单等式比较当前值和和provider寻找后的值，munge可以确保使用提供数据类型是provider返回值一致性
+下面custom_user资源，munge 确保返回值总是被对比，反对以防是一个interger整数。
+
+Puppet::Type.newtype(:custom_user) do
+ newparam(:uid) do
+ munge do |value|
+ Integer(value)
+ end
+ end
+
+autorequire
+autorequire方法构建绝对顺序资源之间在catalog，他总是type指定好建立依赖，会总是存在某些资源之间。在puppet type 推荐的特定用户声明关系在资源之间
+如文件只要依赖他们的父目录
+用户资源依赖他们的组
+比如custom_package 参数是一个本地文件路径，那我们总会去确保文件被管理前，软件包一键安装了
+Puppet::Type.newtype(:custom_package) do
+ ...
+ autorequire(:file) do
+ self[:source] if self[:source] and Pathname.new(self[:source]).absolute?
+ end
+end
+
+arrays
+支持值是数组array_matching 
+Puppet::Type.newtype(:custom_user) do
+ newproperty(:groups, :array_matching => :all) do
+ end
+end
+
+
+custom_user { 'foo':
+ ensure => present,
+ groups => ['admin', 'developer'],
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
